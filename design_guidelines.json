@@ -1,0 +1,136 @@
+{
+  "theme": "dark",
+  "archetype": "5_luxury_neon_hybrid",
+  "branding": {
+    "name": "Chitra",
+    "vibe": "Ethereal, Intelligent, Premium AI Copilot",
+    "instructions": "Build a Chat-First AI Workspace. Do NOT build a dashboard. The chat interface is the primary operational surface. Incorporate deep matte backgrounds with high-end glassmorphism and subtle blue/purple rim lights."
+  },
+  "colors": {
+    "background": {
+      "base": "#050505",
+      "surface": "#0a0a0e",
+      "glass": "rgba(20, 25, 45, 0.15)"
+    },
+    "primary": {
+      "DEFAULT": "#7c3aed",
+      "gradient": "linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #c026d3 100%)",
+      "glow": "rgba(124, 58, 237, 0.3)"
+    },
+    "text": {
+      "primary": "#f8fafc",
+      "secondary": "#94a3b8",
+      "muted": "#475569"
+    },
+    "border": {
+      "glass": "rgba(124, 58, 237, 0.15)",
+      "light": "rgba(255, 255, 255, 0.08)",
+      "accent": "rgba(37, 99, 235, 0.3)"
+    }
+  },
+  "typography": {
+    "headings": {
+      "family": "Outfit, sans-serif",
+      "weight": "600, 700",
+      "tracking": "tracking-tight",
+      "usage_rules": "Use fluid typography up to text-5xl for main welcome. Never use Inter for headings."
+    },
+    "body": {
+      "family": "Plus Jakarta Sans, sans-serif",
+      "weight": "400, 500",
+      "leading": "leading-relaxed"
+    },
+    "mono": {
+      "family": "JetBrains Mono, monospace",
+      "usage": "Use for ATS scores, probability rings, AI analytical data, and code/tech specs."
+    }
+  },
+  "spacing_and_layout": {
+    "global_padding": "p-4 md:p-8 lg:p-12",
+    "grid_system": "grid-cols-1 md:grid-cols-12 gap-6",
+    "chat_container": "col-span-1 md:col-span-8 lg:col-span-9 h-[85vh] flex flex-col",
+    "sidebar": "col-span-1 md:col-span-4 lg:col-span-3 h-[85vh] flex flex-col gap-6",
+    "surface_rules": "Containers with borders must use p-6 or p-8 internal padding. Use rounded-3xl for the main chat card, rounded-2xl for message bubbles and job cards."
+  },
+  "components": {
+    "chat_message_ai": {
+      "background": "bg-[#111116]/80 backdrop-blur-xl",
+      "border": "border border-purple-500/20",
+      "shadow": "shadow-[0_0_15px_rgba(124,58,237,0.05)]",
+      "border_radius": "rounded-2xl rounded-tl-sm",
+      "padding": "p-5"
+    },
+    "chat_message_user": {
+      "background": "bg-gradient-to-r from-blue-600/20 to-purple-600/20",
+      "border": "border border-white/10",
+      "border_radius": "rounded-2xl rounded-tr-sm",
+      "padding": "p-5"
+    },
+    "quick_action_chips": {
+      "background": "bg-white/5 hover:bg-white/10 transition-all",
+      "border": "border border-white/10 hover:border-purple-500/50",
+      "text": "text-sm font-medium text-slate-300 hover:text-white",
+      "border_radius": "rounded-full"
+    },
+    "job_card_inline": {
+      "style": "Glassmorphism panel inserted directly into the chat flow.",
+      "background": "bg-black/40 backdrop-blur-2xl",
+      "border": "border border-blue-500/20 hover:border-purple-500/50 transition-colors",
+      "border_radius": "rounded-2xl",
+      "layout": "Flex column with header (Logo + Title), metadata row (Location, Salary, Experience), and action footer.",
+      "shadow": "hover:shadow-[0_10px_30px_rgba(124,58,237,0.1)]"
+    },
+    "probability_ring": {
+      "type": "SVG Circular Progress",
+      "track_color": "stroke-white/10",
+      "progress_color": "stroke-[url(#blue-purple-gradient)]",
+      "inner_text": "JetBrains Mono, large, white"
+    }
+  },
+  "motion": {
+    "message_entrance": "Framer Motion: initial={opacity: 0, y: 10}, animate={opacity: 1, y: 0}",
+    "stagger_children": "transition: {staggerChildren: 0.1}",
+    "hover_lift": "hover:-translate-y-1 transition-transform duration-300",
+    "glass_glow": "Animate box-shadow on hover for primary CTAs."
+  },
+  "media": {
+    "background_textures": [
+      {
+        "url": "https://images.unsplash.com/photo-1637825891028-564f672aa42c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2OTV8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGRhcmslMjBwdXJwbGUlMjBibHVlJTIwdGV4dHVyZXxlbnwwfHx8fDE3ODIzODY3ODJ8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Abstract purple wave gradient background",
+        "usage": "Use as a fixed background for the app body with opacity-20 to provide subtle texture behind the dark mode."
+      }
+    ],
+    "user_avatars": [
+      {
+        "url": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDJ8MHwxfHNlYXJjaHwzfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0fGVufDB8fHx8MTc4MjIzODQ3N3ww&ixlib=rb-4.1.0&q=85",
+        "description": "Professional smiling woman",
+        "usage": "User profile avatar"
+      }
+    ],
+    "company_logos": [
+      {
+        "url": "https://images.unsplash.com/photo-1760386129108-d17b9cdfc4fa?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzOTB8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjB0ZWNoJTIwY29tcGFueSUyMGxvZ298ZW58MHx8fHwxNzgyMzg2NzgyfDA&ixlib=rb-4.1.0&q=85",
+        "description": "Audible neon logo",
+        "usage": "Job card company logo example"
+      },
+      {
+        "url": "https://images.pexels.com/photos/15863044/pexels-photo-15863044.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "OpenAI logo",
+        "usage": "AI system avatar or partner logo"
+      }
+    ]
+  },
+  "testing": {
+    "attributes": "All interactive elements MUST include data-testid attributes (e.g., data-testid='chat-input', data-testid='job-card-apply')."
+  },
+  "instructions_to_main_agent": [
+    "Install required fonts from Google Fonts: Outfit, Plus Jakarta Sans, JetBrains Mono.",
+    "Implement the layout as Chat-First: The main view is the chat interface. Do not wrap this in a traditional admin dashboard layout.",
+    "The Chat Card must use high-end glassmorphism: bg-black/20, backdrop-blur-2xl, and a very subtle purple/blue border.",
+    "Job Cards are NOT on a separate grid page initially; they are rendered INLINE within the chat flow as the AI responds.",
+    "Implement the /jobs/:jobId workspace as a detailed overlay or split view with a Success Probability Ring (use Recharts).",
+    "Ensure all Shadcn components (buttons, inputs) are heavily customized to remove the default 'Vercel white/gray' look, using the deep dark mode palette.",
+    "Never use pure black #000000. Use #050505 or #0A0A0A. Never use pure white for borders, use rgba(255,255,255,0.08)."
+  ]
+}

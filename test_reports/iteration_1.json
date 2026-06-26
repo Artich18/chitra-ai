@@ -1,0 +1,47 @@
+{
+  "summary": "First end-to-end test of Chitra AI V4. Backend pytest suite (15 tests) covers auth/chat/jobs/resume/settings — 14 pass; 1 intermittent failure due to upstream OpenAI quota + transient Gemini 429 (real env issue, not code). Frontend login flow works end-to-end (redirect → login → chat as first page → welcome 'Hey Smoke' → starter chips → resume/sidebar). Two REAL backend bugs discovered: (1) /api/chat/send occasionally renders raw markdown-fenced JSON to the user instead of inline JobCards because _safe_json silently falls back to {'raw': text} which the chat route then surfaces as kind='text'. (2) /api/jobs/{id}/analysis sometimes returns action_plan with only 4 items, violating the spec's 5+ requirement (prompt does not enforce minimum count).",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "/api/chat/send", "issue": "When AI returns markdown-fenced JSON that _safe_json fails to parse (prose-before-fence, truncated, or odd whitespace), backend silently returns kind='text' with the raw JSON string as content. Frontend then renders the raw '```json { \"kind\": \"job_cards\", ... }' blob to the user. Reproduced in frontend test on first 'Find React jobs in Bangalore' query. Hardening needed: stronger JSON repair (balance braces, strip prose, retry with stricter system prompt) and never surface 'raw' as user-visible text.", "priority": "HIGH"},
+      {"endpoint": "/api/jobs/{id}/analysis", "issue": "Spec requires action_plan >= 5 items but AI returned 4 in one run. WORKSPACE_SYSTEM prompt in /app/backend/ai/prompts.py only says 'Return 8-12 interview questions ... Return 5-8 skills in skill_gap' — no explicit minimum for action_plan. Add 'Return 5-8 action_plan steps' to the prompt.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "/api/chat/send (provider=openai)", "issue": "OpenAI key in /app/backend/.env is over its billing quota — returns 429 RateLimitError. Fallback to Gemini works, but if Gemini is also rate-limited (free-tier 429 observed during burst tests), request fails with 500 'All AI providers failed'. Should be 503 with a friendly message. The OpenAI key likely needs replacement or the OPENAI quota must be topped-up before the 'fallback' user choice is truly viable."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Chat -> MessageBubble", "issue": "When backend returns kind='text' with raw-JSON content (bug #1 above), the message bubble renders the raw '```json {...}' string directly. Suggest MessageBubble detect a leading ```json fence and either try to re-parse client-side or hide the raw payload behind a 'Show debug' affordance.", "selector": "[data-testid=\"chat-messages\"]", "priority": "HIGH"}
+    ],
+    "integration_issues": [
+      {"flow": "Chat → Job Cards", "issue": "Inline JobCards intermittently do NOT render because backend returns kind='text' (see backend critical #1). When AI JSON parsing succeeds, this flow works (verified via backend pytest TestChat.test_chat_job_search_returns_job_cards which passed).", "affected_selectors": ["[data-testid^=\"job-card-\"]", "[data-testid^=\"open-workspace-\"]"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Fix _safe_json in /app/backend/ai/providers.py: strip leading prose before first '{', balance braces on truncation, and on hard-failure return an error result (not {'raw': text}). The chat route must NOT surface raw model output to the user.",
+    "Update WORKSPACE_SYSTEM in /app/backend/ai/prompts.py to enforce 'Produce 5-8 action_plan steps' explicitly (currently only interview_questions and skill_gap have explicit minimums).",
+    "Either top-up the OpenAI quota or document that 'openai' provider choice is currently unavailable; make orchestrator return HTTP 503 (not 500) when all providers fail.",
+    "Consider lowering temperature / adding response_format=json_object for the Gemini call in providers.py to make JSON output deterministic."
+  ],
+  "critical_code_review_comments": [
+    "ai/providers.py::_safe_json — returning {'raw': text} on failure is a footgun; downstream code happily uses it as a user-facing text. Either raise or return a sentinel that the route can detect and convert to a graceful 'I had trouble — please try again' message.",
+    "routes/chat_routes.py line 157 — 'text = data.get(\"text\") or data.get(\"raw\")' is the exact place where unparsed raw model output leaks to the chat surface.",
+    "routes/jobs_routes.py /api/jobs/{id}/analysis — no validation that the AI-returned analysis meets the documented minimums; consider Pydantic-validating the response and retrying once if it fails counts.",
+    "Settings PATCH echoes upsert result directly — good; but on chat/send the 'preferred_provider' is consumed (good)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/backend_test.py (created — 15 pytest tests covering auth, chat, jobs, resume, settings + provider switch)"
+  ],
+  "success_rate": {"backend": "93% (14/15 — single failure was upstream rate-limit, not a code bug)", "frontend": "70% (login+chat shell perfect; inline JobCards rendering blocked by backend JSON-parsing fallback bug)"},
+  "test_credentials": "Seed user smoke@chitra.ai / test1234 works. Also auto-creates fresh test_<uuid>@chitra.ai users.",
+  "seed_data_creation": "Pytest fixture 'fresh_user' registers a new lowercased test_*@chitra.ai user per session. No cleanup hook — these accumulate in MongoDB profiles collection.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run pytest with `cd /app && pytest backend/tests/backend_test.py -v` (xdist already configured in /app/backend/pytest.ini with loadscope). Job-search-dependent tests now use a session-scoped fixture 'job_search_result' which auto-skips if AI returns no jobs. The 'raw JSON in chat' bug is intermittent — to reproduce, send 'Find React jobs in Bangalore' multiple times from a fresh browser session; it appeared on first try via Playwright. Backend logs at /var/log/supervisor/backend.*.log show RuntimeError('All AI providers failed') when both Gemini and OpenAI are rate-limited.",
+  "rca of the issue": "Bug #1 (raw JSON in chat): The Gemini 2.5 Flash model occasionally wraps the JSON response in a ```json ... ``` markdown code fence with leading prose (e.g., 'Here are 5 exciting React opportunities... ```json {...}```'). _safe_json's startswith('```') check fails because of the prose prefix, and the greedy {.*} regex either misses or returns an extractable substring that still fails json.loads (e.g., extra trailing tokens). It falls through to returning {'raw': text}. chat_routes.py then sets kind='text' and content=raw_text, persisting the raw markdown blob as the assistant message. The user sees the raw JSON in chat. Mitigation: in _safe_json, search for the FIRST '{' regardless of leading prose, then balance braces while iterating to find a parseable substring; and in chat_routes.py treat {'raw': ...} as an error to retry or return a graceful fallback. Bug #2 (action_plan <5): Prompt is permissive about action_plan length; add explicit '5-8 items' and validate server-side before caching."
+}
