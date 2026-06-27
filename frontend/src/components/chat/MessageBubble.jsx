@@ -20,12 +20,12 @@ export default function MessageBubble({ message, onSaveJob, onOpenWorkspace, sav
           <Sparkles className="w-4 h-4 text-white" />
         </div>
       )}
-      <div className={`max-w-[88%] md:max-w-[78%] ${isUser ? 'order-first' : ''}`}>
+      <div className={`w-full max-w-full md:max-w-[78%] ${isUser ? 'order-first' : ''}`}>
         <div
           className={
             isUser
-              ? 'bg-gradient-to-br from-blue-600/30 to-purple-600/25 border border-white/10 rounded-2xl rounded-tr-sm p-4 text-sm leading-relaxed'
-              : 'bg-[#0e0e15]/80 border border-purple-500/15 rounded-2xl rounded-tl-sm p-5 text-sm leading-relaxed text-slate-200'
+              ? 'w-full bg-gradient-to-br from-blue-600/30 to-purple-600/25 border border-white/10 rounded-2xl rounded-tr-sm p-4 text-sm leading-relaxed'
+              : 'w-full bg-[#0e0e15]/80 border border-purple-500/15 rounded-2xl rounded-tl-sm p-4 md:p-5 text-sm leading-relaxed text-slate-200'
           }
           data-testid={`message-${message.role}`}
         >
@@ -127,14 +127,14 @@ function JobCardInline({ job, onSave, onOpen, saved }) {
       className="bg-black/40 backdrop-blur-2xl border border-blue-500/20 hover:border-purple-500/50 rounded-2xl p-4 transition-colors"
       data-testid={`job-card-${job.id}`}
     >
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex items-start gap-3 min-w-0">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-3 mb-3 w-full">
+        <div className="flex items-start gap-3 min-w-0 w-full">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center shrink-0">
             <Briefcase className="w-4 h-4 text-purple-300" />
           </div>
-          <div className="min-w-0">
-            <p className="font-display font-semibold text-white truncate">{job.title}</p>
-            <p className="text-xs text-slate-400 truncate">{job.company}</p>
+          <div className="min-w-0 w-full">
+            <p className="font-display font-semibold text-white break-words">{job.title}</p>
+            <p className="text-xs text-slate-400 break-words">{job.company}</p>
           </div>
         </div>
         <span className="text-[10px] font-mono-data text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-1 rounded-full whitespace-nowrap">{job.type}</span>
