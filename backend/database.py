@@ -1,13 +1,12 @@
 """
 Database Abstraction / Repository Layer
 ----------------------------------------
-All collections behind a simple interface so we can later swap
-MongoDB with Supabase (PostgreSQL) without changing business logic.
+Supabase (PostgreSQL) implementation — replaces the MongoDB layer.
 
-Logical tables (kept compatible with the future Supabase schema):
+Logical tables (compatible with Supabase schema):
 - profiles
 - chat_sessions
-- chat_messages          (chat_history)
+- chat_messages
 - saved_jobs
 - jobs_cache
 - resumes
@@ -16,7 +15,7 @@ Logical tables (kept compatible with the future Supabase schema):
 - settings
 - user_memories
 - job_search_history
-- user_sessions          (auth)
+- user_sessions
 """
 
 from __future__ import annotations
@@ -24,28 +23,50 @@ from __future__ import annotations
 import os
 from datetime import datetime, timezone
 from typing import Any
-from motor.motor_asyncio import AsyncIOMotorClient
+from supabase import create_client, Client
 
 
-class Repository:
-    """Thin async repository wrapper around MongoDB collections.
-
-    Every method strips MongoDB's internal `_id` so the public API never
-    leaks BSON. All timestamps are ISO strings (UTC) for portability.
+class SupabaseRepository:
+    """Thin async repository wrapper around Supabase PostgreSQL tables.
+    All timestamps are ISO strings (UTC) for portability.
     """
 
-    def __init__(self, mongo_url: str, db_name: str):
-        self._client = AsyncIOMotorClient(mongo_url)
-        self._db = self._client[db_name]
-
-    @property
-    def db(self):
-        return self._db
+    def __init__(self, url: str, key: str):
+        self._client: Client = create_client(url, key)
 
     # ---------- generic helpers ----------
 
     async def find_one(self, table: str, query: dict) -> dict | None:
-        return await self._db[table].find_one(query, {"_id": 0})
+        try:
+            filters = []
+            for k, v in query.items():
+                if k == "id":
+                    filters.append(("eq", "id", v))
+                elif k == "user_id":
+                    filters.append(("eq", "user_id", v))
+                elif k == "session_id":
+                    filters.append(("eq", "session_id", v))
+                elif k == "job_id":
+                    filters.append(("eq", "job_id", v))
+                elif k == "email":
+                    filters.append(("eq", "email", v))
+                elif k == "session_token":
+                    filters.append(("eq", "session_token", v))
+                elif k == "is_active":
+                    filters.append(("eq", "is_active", v))
+                else:
+                    filters.append(("eq", k, v))
+
+            q = self._client.table(table).select("*")
+            for op, col, val in filters:
+                if op == "eq":
+                    q = q.eq(col, val)
+            q = q.limit(1)
+            resp = q.execute()
+            rows = resp.data if resp else []
+            return rows[0] if rows else None
+        except Exception:
+            return None
 
     async def find_many(
         self,
@@ -54,48 +75,137 @@ class Repository:
         sort: list | None = None,
         limit: int = 100,
     ) -> list[dict]:
-        cursor = self._db[table].find(query or {}, {"_id": 0})
-        if sort:
-            cursor = cursor.sort(sort)
-        return await cursor.to_list(length=limit)
+        try:
+            q = self._client.table(table).select("*")
+            if query:
+                for k, v in query.items():
+                    if k == "id":
+                        q = q.eq("id", v)
+                    elif k == "user_id":
+                        q = q.eq("user_id", v)
+                    elif k == "session_id":
+                        q = q.eq("session_id", v)
+                    elif k == "job_id":
+                        q = q.eq("job_id", v)
+                    elif k == "email":
+                        q = q.eq("email", v)
+                    elif k == "session_token":
+                        q = q.eq("session_token", v)
+                    elif k == "is_active":
+                        q = q.eq("is_active", v)
+                    else:
+                        q = q.eq(k, v)
+            if sort:
+                for col, direction in sort:
+                    if direction == -1:
+                        q = q.order(col, desc=True)
+                    else:
+                        q = q.order(col)
+            q = q.limit(limit)
+            resp = q.execute()
+            return resp.data if resp else []
+        except Exception:
+            return []
 
     async def insert(self, table: str, doc: dict) -> dict:
         doc = {**doc}
         doc.setdefault("created_at", datetime.now(timezone.utc).isoformat())
-        await self._db[table].insert_one(doc)
-        doc.pop("_id", None)
-        return doc
+        resp = self._client.table(table).insert(doc).execute()
+        data = resp.data if resp else []
+        return data[0] if data else doc
 
     async def update(self, table: str, query: dict, patch: dict) -> dict | None:
         patch = {**patch, "updated_at": datetime.now(timezone.utc).isoformat()}
-        await self._db[table].update_one(query, {"$set": patch})
-        return await self.find_one(table, query)
+        q = self._client.table(table).update(patch)
+        for k, v in query.items():
+            if k == "id":
+                q = q.eq("id", v)
+            elif k == "user_id":
+                q = q.eq("user_id", v)
+            elif k == "session_id":
+                q = q.eq("session_id", v)
+            elif k == "job_id":
+                q = q.eq("job_id", v)
+            elif k == "email":
+                q = q.eq("email", v)
+            elif k == "session_token":
+                q = q.eq("session_token", v)
+            else:
+                q = q.eq(k, v)
+        resp = q.execute()
+        data = resp.data if resp else []
+        return data[0] if data else None
 
     async def upsert(self, table: str, query: dict, patch: dict) -> dict | None:
         patch = {**patch, "updated_at": datetime.now(timezone.utc).isoformat()}
-        await self._db[table].update_one(query, {"$set": patch}, upsert=True)
-        return await self.find_one(table, query)
+        # For upsert: try insert then update, or use Supabase upsert
+        try:
+            resp = self._client.table(table).upsert(patch).execute()
+            data = resp.data if resp else []
+            return data[0] if data else None
+        except Exception:
+            return None
 
     async def delete(self, table: str, query: dict) -> int:
-        result = await self._db[table].delete_many(query)
-        return result.deleted_count
+        q = self._client.table(table).delete()
+        for k, v in query.items():
+            if k == "id":
+                q = q.eq("id", v)
+            elif k == "user_id":
+                q = q.eq("user_id", v)
+            elif k == "session_id":
+                q = q.eq("session_id", v)
+            elif k == "job_id":
+                q = q.eq("job_id", v)
+            elif k == "email":
+                q = q.eq("email", v)
+            elif k == "session_token":
+                q = q.eq("session_token", v)
+            else:
+                q = q.eq(k, v)
+        resp = q.execute()
+        data = resp.data if resp else []
+        return len(data)
 
     async def count(self, table: str, query: dict | None = None) -> int:
-        return await self._db[table].count_documents(query or {})
+        try:
+            q = self._client.table(table).select("*", count="exact", head=True)
+            if query:
+                for k, v in query.items():
+                    if k == "id":
+                        q = q.eq("id", v)
+                    elif k == "user_id":
+                        q = q.eq("user_id", v)
+                    elif k == "session_id":
+                        q = q.eq("session_id", v)
+                    elif k == "job_id":
+                        q = q.eq("job_id", v)
+                    elif k == "email":
+                        q = q.eq("email", v)
+                    elif k == "session_token":
+                        q = q.eq("session_token", v)
+                    elif k == "is_active":
+                        q = q.eq("is_active", v)
+                    else:
+                        q = q.eq(k, v)
+            resp = q.execute()
+            return resp.count if resp else 0
+        except Exception:
+            return 0
 
     def close(self):
-        self._client.close()
+        pass
 
 
 # Lazy singleton
-_repo: Repository | None = None
+_repo: SupabaseRepository | None = None
 
 
-def get_repo() -> Repository:
+def get_repo() -> SupabaseRepository:
     global _repo
     if _repo is None:
-        _repo = Repository(
-            mongo_url=os.environ["MONGO_URL"],
-            db_name=os.environ["DB_NAME"],
+        _repo = SupabaseRepository(
+            url=os.environ.get("SUPABASE_URL", os.environ.get("VITE_SUPABASE_URL", "")),
+            key=os.environ.get("SUPABASE_SERVICE_ROLE_KEY", os.environ.get("SUPABASE_ANON_KEY", os.environ.get("VITE_SUPABASE_ANON_KEY", ""))),
         )
     return _repo
