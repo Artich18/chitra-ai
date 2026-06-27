@@ -268,12 +268,12 @@ function EmptyState() {
       <p className="text-sm text-slate-400 max-w-md">
         Ask for jobs, resume help, ATS fixes, interview prep — Chitra handles it all without leaving this conversation.
       </p>
-      <div className="mt-6 w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+      <div className="mt-6 w-full max-w-full grid grid-cols-1 gap-3 sm:grid-cols-2 sm:max-w-3xl">
         {starters.map((s) => (
           <button
             key={s.label}
             data-testid={`starter-${s.label.slice(0, 18).replace(/\s+/g, '-').toLowerCase()}`}
-            className="text-left text-sm px-4 py-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/5 hover:border-purple-500/30 transition-all flex items-center justify-between group"
+            className="w-full min-h-[4.5rem] text-left text-sm px-4 py-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/5 hover:border-purple-500/30 transition-all flex flex-col justify-between gap-3 group break-words"
             onClick={() => {
               const input = document.querySelector('[data-testid="chat-input"]');
               if (input) { input.value = s.label; input.focus(); }
@@ -283,10 +283,11 @@ function EmptyState() {
               input?.dispatchEvent(ev);
             }}
           >
-            <span className="flex items-center gap-3 text-slate-300 group-hover:text-white">
-              <span className="text-lg">{s.emoji}</span> {s.label}
+            <span className="flex items-start gap-3 text-slate-300 group-hover:text-white">
+              <span className="text-lg">{s.emoji}</span>
+              <span className="leading-snug">{s.label}</span>
             </span>
-            <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-purple-400 transition-colors" />
+            <ArrowRight className="w-4 h-4 text-slate-600 self-end group-hover:text-purple-400 transition-colors" />
           </button>
         ))}
       </div>
