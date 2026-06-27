@@ -40,9 +40,10 @@ async def upload(file: UploadFile = File(...), user: dict = Depends(get_current_
         raise HTTPException(status_code=400, detail="Could not extract text from file")
 
     # Deactivate previous resumes
-    await repo.db["resumes"].update_many(
-        {"user_id": user["user_id"]}, {"$set": {"is_active": False}}
-    )
+    all_resumes = await repo.find_many("resumes", {"user_id": user["user_id"]}, limit=100)
+    for r in all_resumes:
+        if r.get("is_active"):
+            await repo.update("resumes", {"id": r["id"]}, {"is_active": False})
 
     resume = Resume(
         user_id=user["user_id"],
@@ -60,9 +61,10 @@ async def paste(payload: ResumePasteIn, user: dict = Depends(get_current_user)):
     repo = get_repo()
     if len(payload.content_text.strip()) < 30:
         raise HTTPException(status_code=400, detail="Resume text too short")
-    await repo.db["resumes"].update_many(
-        {"user_id": user["user_id"]}, {"$set": {"is_active": False}}
-    )
+    all_resumes = await repo.find_many("resumes", {"user_id": user["user_id"]}, limit=100)
+    for r in all_resumes:
+        if r.get("is_active"):
+            await repo.update("resumes", {"id": r["id"]}, {"is_active": False})
     resume = Resume(
         user_id=user["user_id"],
         content_text=payload.content_text.strip(),

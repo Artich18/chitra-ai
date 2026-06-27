@@ -41,8 +41,9 @@ async def root():
 async def health():
     repo = get_repo()
     try:
-        await repo.db.command("ping")
-        return {"status": "ok", "db": "up"}
+        # Quick connectivity check: count profiles table
+        count = await repo.count("profiles")
+        return {"status": "ok", "db": "up", "profiles": count}
     except Exception as e:
         return {"status": "degraded", "db": str(e)}
 
@@ -66,22 +67,9 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def on_startup():
-    repo = get_repo()
-    try:
-        await repo.db["profiles"].create_index("email", unique=True)
-        await repo.db["profiles"].create_index("user_id", unique=True)
-        await repo.db["chat_sessions"].create_index("user_id")
-        await repo.db["chat_messages"].create_index("session_id")
-        await repo.db["saved_jobs"].create_index([("user_id", 1), ("job_id", 1)])
-        await repo.db["jobs_cache"].create_index("id", unique=True)
-        await repo.db["resumes"].create_index("user_id")
-        await repo.db["user_sessions"].create_index("session_token")
-        logger.info("Chitra startup complete")
-    except Exception as e:
-        logger.warning("startup indexes warning: %s", e)
+    logger.info("Chitra startup complete")
 
 
 @app.on_event("shutdown")
 async def on_shutdown():
-    repo = get_repo()
-    repo.close()
+    pass

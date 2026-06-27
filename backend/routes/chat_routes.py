@@ -241,8 +241,8 @@ async def send_message(payload: SendMessageIn, user: dict = Depends(get_current_
                 "query": payload.content,
                 "results_count": len(cached),
             })
-    elif kind == "action_plan" and isinstance(data.get("action_plan"), list):
-        payload_out = {"action_plan": data["action_plan"]}
+        elif kind == "action_plan" and isinstance(data.get("action_plan"), list):
+            payload_out = {"action_plan": data["action_plan"]}
 
     # 7. Persist AI message
     ai_msg = ChatMessage(
