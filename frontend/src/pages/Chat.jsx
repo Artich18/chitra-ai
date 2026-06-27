@@ -92,6 +92,16 @@ export default function Chat() {
     }
   };
 
+  const editMessage = async (messageId, newContent) => {
+    try {
+      const { data } = await api.patch(`/chat/messages/${messageId}`, { content: newContent });
+      setMessages((m) => m.map((msg) => (msg.id === messageId ? data : msg)));
+      toast.success('Message updated');
+    } catch (e) {
+      toast.error('Could not update message');
+    }
+  };
+
   const handleSaveJob = async (jobId) => {
     try {
       await api.post(`/jobs/${jobId}/save`);
@@ -172,6 +182,7 @@ export default function Chat() {
                     onSaveJob={handleSaveJob}
                     onOpenWorkspace={handleOpenWorkspace}
                     savedJobIds={new Set(savedJobs.map((j) => j.id))}
+                    onEditMessage={editMessage}
                   />
                 ))}
               </AnimatePresence>

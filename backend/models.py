@@ -88,6 +88,7 @@ class Job(BaseModel):
     skills: list[str] = []
     posted: str | None = None
     apply_url: str | None = None
+    apply_urls: list[str] = []
     source: str = "ai"  # 'ai' | 'linkedin' | 'jsearch' etc.
     created_at: str = Field(default_factory=_now_iso)
 

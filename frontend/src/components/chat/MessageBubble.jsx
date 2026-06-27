@@ -1,8 +1,12 @@
+import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, User as UserIcon, Bookmark, ExternalLink, Briefcase, MapPin, Banknote, Clock } from 'lucide-react';
 
-export default function MessageBubble({ message, onSaveJob, onOpenWorkspace, savedJobIds }) {
+export default function MessageBubble({ message, onSaveJob, onOpenWorkspace, savedJobIds, onEditMessage }) {
   const isUser = message.role === 'user';
+  const isAssistant = message.role === 'assistant';
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editText, setEditText] = React.useState(message.content || '');
 
   return (
     <motion.div
@@ -25,7 +29,30 @@ export default function MessageBubble({ message, onSaveJob, onOpenWorkspace, sav
           }
           data-testid={`message-${message.role}`}
         >
-          <FormattedText text={message.content} />
+          {isAssistant && !isEditing && (
+            <div className="flex justify-end -mt-4 -mr-2">
+              <button
+                onClick={() => { setIsEditing(true); setEditText(message.content || ''); }}
+                className="text-xs text-slate-400 hover:text-white"
+                title="Edit assistant message"
+              >Edit</button>
+            </div>
+          )}
+
+          {isEditing ? (
+            <div className="space-y-2">
+              <textarea value={editText} onChange={(e) => setEditText(e.target.value)} className="w-full bg-black/20 p-2 rounded text-sm text-slate-200" />
+              <div className="flex gap-2">
+                <button onClick={async () => {
+                  if (onEditMessage) await onEditMessage(message.id, editText);
+                  setIsEditing(false);
+                }} className="btn-primary text-xs px-3 py-1 rounded">Save</button>
+                <button onClick={() => setIsEditing(false)} className="text-xs px-3 py-1 rounded bg-white/5">Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <FormattedText text={message.content} />
+          )}
 
           {message.kind === 'job_cards' && message.payload?.jobs?.length > 0 && (
             <div className="mt-4 grid grid-cols-1 gap-3">
@@ -128,7 +155,7 @@ function JobCardInline({ job, onSave, onOpen, saved }) {
       )}
 
       {job.description && (
-        <p className="text-xs text-slate-400 mb-3 line-clamp-2">{job.description}</p>
+        <p className="text-xs text-slate-400 mb-3">{job.description}</p>
       )}
 
       <div className="flex gap-2">
@@ -157,6 +184,13 @@ function JobCardInline({ job, onSave, onOpen, saved }) {
           >
             <ExternalLink className="w-3.5 h-3.5" /> Apply
           </a>
+        )}
+        {job.apply_urls && job.apply_urls.length > 1 && (
+          <div className="flex items-center gap-2 text-[11px] text-slate-400 ml-2">
+            {job.apply_urls.slice(1).map((u, i) => (
+              <a key={i} href={u} target="_blank" rel="noreferrer" className="underline text-xs truncate">Link {i + 2}</a>
+            ))}
+          </div>
         )}
       </div>
     </motion.div>

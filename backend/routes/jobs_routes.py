@@ -31,6 +31,32 @@ async def list_saved(user: dict = Depends(get_current_user)):
     return out
 
 
+@router.get("/history")
+async def list_search_history(user: dict = Depends(get_current_user)):
+    repo = get_repo()
+    items = await repo.find_many(
+        "job_search_history",
+        {"user_id": user["user_id"]},
+        sort=[("created_at", -1)],
+        limit=100,
+    )
+    return items
+
+
+@router.delete("/history")
+async def delete_search_history(user: dict = Depends(get_current_user)):
+    repo = get_repo()
+    await repo.delete("job_search_history", {"user_id": user["user_id"]})
+    return {"ok": True}
+
+
+@router.delete("/history/{history_id}")
+async def delete_search_history_item(history_id: str, user: dict = Depends(get_current_user)):
+    repo = get_repo()
+    await repo.delete("job_search_history", {"user_id": user["user_id"], "id": history_id})
+    return {"ok": True}
+
+
 @router.get("/{job_id}")
 async def get_job(job_id: str, user: dict = Depends(get_current_user)):
     repo = get_repo()

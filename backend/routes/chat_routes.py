@@ -10,6 +10,7 @@ from auth import get_current_user
 from models import ChatSession, ChatMessage, SendMessageIn, Job
 from ai.providers import get_orchestrator
 from ai.prompts import build_chat_system
+from services.job_search import search_jobs_serp
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
@@ -46,6 +47,22 @@ async def list_messages(session_id: str, user: dict = Depends(get_current_user))
         limit=500,
     )
     return {"session": sess, "messages": msgs}
+
+
+@router.patch("/messages/{message_id}")
+async def edit_message(message_id: str, payload: dict, user: dict = Depends(get_current_user)):
+    repo = get_repo()
+    msg = await repo.find_one("chat_messages", {"id": message_id})
+    if not msg or msg.get("user_id") != user["user_id"]:
+        raise HTTPException(status_code=404, detail="Message not found")
+    if msg.get("role") != "assistant":
+        raise HTTPException(status_code=403, detail="Only assistant messages can be edited")
+    new_content = payload.get("content")
+    if not isinstance(new_content, str) or not new_content.strip():
+        raise HTTPException(status_code=400, detail="Content must be a non-empty string")
+    await repo.update("chat_messages", {"id": message_id}, {"content": new_content})
+    updated = await repo.find_one("chat_messages", {"id": message_id})
+    return updated
 
 
 @router.delete("/sessions/{session_id}")
@@ -145,29 +162,13 @@ async def send_message(payload: SendMessageIn, user: dict = Depends(get_current_
     if payload.quick_action:
         prompt = f"[quick_action={payload.quick_action}]\n{payload.content}"
 
-    try:
-        result = await orch.generate_json(
-            system=system,
-            prompt=prompt,
-            task=task,
-            preferred_provider=preferred,
-        )
-    except Exception as e:
-        raise HTTPException(status_code=503, detail=f"AI providers unavailable: {str(e)[:120]}")
-    data = result["data"] if isinstance(result["data"], dict) else {}
-    kind = data.get("kind", "text")
-    text = data.get("text")
-    if not text or not isinstance(text, str):
-        # Defensive: never leak raw model output. Provide a graceful message.
-        text = "I had trouble formulating a response. Could you rephrase that?"
     payload_out: dict | None = None
 
-    # 6. If job_cards — persist jobs into jobs_cache for workspace access
-    if kind == "job_cards" and isinstance(data.get("jobs"), list):
+    # Special-case: use SerpAPI for job search so we return real job postings
+    if task == "job_search":
+        jobs = search_jobs_serp(payload.content)
         cached = []
-        for j in data["jobs"][:10]:
-            if not isinstance(j, dict):
-                continue
+        for j in jobs[:10]:
             job_obj = Job(
                 title=j.get("title", "Untitled Role"),
                 company=j.get("company", "Unknown"),
@@ -178,7 +179,9 @@ async def send_message(payload: SendMessageIn, user: dict = Depends(get_current_
                 description=j.get("description", ""),
                 skills=j.get("skills", []) if isinstance(j.get("skills"), list) else [],
                 posted=j.get("posted"),
-                source="ai",
+                apply_url=j.get("apply_url"),
+                apply_urls=j.get("apply_urls", []),
+                source="serpapi",
             )
             await repo.upsert("jobs_cache", {"id": job_obj.id}, job_obj.model_dump())
             cached.append(job_obj.model_dump())
@@ -189,6 +192,55 @@ async def send_message(payload: SendMessageIn, user: dict = Depends(get_current_
             "query": payload.content,
             "results_count": len(cached),
         })
+        # Build a friendly assistant text
+        text = f"Found {len(cached)} job(s) for \"{payload.content}\". Open any job to analyze it further."
+        kind = "job_cards"
+        result = {"provider": "serpapi"}
+    else:
+        try:
+            result = await orch.generate_json(
+                system=system,
+                prompt=prompt,
+                task=task,
+                preferred_provider=preferred,
+            )
+        except Exception as e:
+            raise HTTPException(status_code=503, detail=f"AI providers unavailable: {str(e)[:120]}")
+        data = result["data"] if isinstance(result["data"], dict) else {}
+        kind = data.get("kind", "text")
+        text = data.get("text")
+        if not text or not isinstance(text, str):
+            # Defensive: never leak raw model output. Provide a graceful message.
+            text = "I had trouble formulating a response. Could you rephrase that?"
+        # 6. If job_cards — persist jobs into jobs_cache for workspace access
+        if kind == "job_cards" and isinstance(data.get("jobs"), list):
+            cached = []
+            for j in data["jobs"][:10]:
+                if not isinstance(j, dict):
+                    continue
+                job_obj = Job(
+                    title=j.get("title", "Untitled Role"),
+                    company=j.get("company", "Unknown"),
+                    location=j.get("location", "Remote"),
+                    salary=j.get("salary"),
+                    experience=j.get("experience"),
+                    type=j.get("type", "Full-time"),
+                    description=j.get("description", ""),
+                    skills=j.get("skills", []) if isinstance(j.get("skills"), list) else [],
+                    posted=j.get("posted"),
+                    apply_url=j.get("apply_url"),
+                    apply_urls=j.get("apply_urls", []),
+                    source="ai",
+                )
+                await repo.upsert("jobs_cache", {"id": job_obj.id}, job_obj.model_dump())
+                cached.append(job_obj.model_dump())
+            payload_out = {"jobs": cached}
+            # Log job search
+            await repo.insert("job_search_history", {
+                "user_id": user["user_id"],
+                "query": payload.content,
+                "results_count": len(cached),
+            })
     elif kind == "action_plan" and isinstance(data.get("action_plan"), list):
         payload_out = {"action_plan": data["action_plan"]}
 

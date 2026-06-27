@@ -1,4 +1,6 @@
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../../lib/api';
 import { Sparkles, Plus, MessageSquare, Bookmark, FileText, LogOut, Settings as SettingsIcon, ArrowUpRight, X } from 'lucide-react';
 
 export default function Sidebar({
@@ -6,6 +8,27 @@ export default function Sidebar({
   savedJobs, user, onLogout, onOpenJob, resume, onOpenResume,
   mobileOpen = false, onCloseMobile,
 }) {
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    api.get('/jobs/history').then(({ data }) => { if (mounted) setHistory(data || []); }).catch(() => {});
+    return () => { mounted = false; };
+  }, []);
+
+  const deleteHistory = async (id) => {
+    try {
+      if (id) {
+        await api.delete(`/jobs/history/${id}`);
+      } else {
+        await api.delete('/jobs/history');
+      }
+      const { data } = await api.get('/jobs/history');
+      setHistory(data || []);
+    } catch (e) {
+      // ignore
+    }
+  };
   return (
     <>
       {/* Mobile backdrop */}
@@ -39,6 +62,30 @@ export default function Sidebar({
           <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500 -mt-0.5">AI Career OS</p>
         </div>
       </div>
+
+        {/* Recent job searches */}
+        <div className="px-4 mt-4">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-2 flex items-center justify-between">
+            Recent searches
+            <button onClick={() => deleteHistory(null)} className="text-[10px] text-red-400">Clear</button>
+          </p>
+          <div className="space-y-1 max-h-[18vh] overflow-y-auto scrollbar-thin">
+            {history.length === 0 && (
+              <p className="text-xs text-slate-600 italic px-2 py-1.5">No recent searches</p>
+            )}
+            {history.map((h) => (
+              <div key={h.id} className="w-full text-left text-xs px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] border border-transparent flex items-center justify-between">
+                <div className="min-w-0 pr-2">
+                  <p className="truncate text-slate-200">{h.query}</p>
+                  <p className="text-[10px] text-slate-500">{h.results_count} results</p>
+                </div>
+                <div className="flex-shrink-0">
+                  <button onClick={() => deleteHistory(h.id)} className="text-[11px] text-red-400">Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
       {/* New Chat */}
       <div className="px-4">
