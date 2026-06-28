@@ -260,11 +260,11 @@ function EmptyState() {
     { label: 'Generate my 6-month career roadmap', emoji: '🚀' },
   ];
   return (
-    <div className="h-full flex flex-col items-center justify-center text-center py-10">
+    <div className="h-full flex flex-col items-center justify-center text-center pt-4 sm:pt-10 px-4">
       <div className="w-14 h-14 rounded-2xl btn-primary flex items-center justify-center mb-5 pulse-glow">
         <Sparkles className="w-7 h-7 text-white" />
       </div>
-      <h3 className="text-xl font-display font-semibold mb-1.5">Chat is where everything happens.</h3>
+      <h3 className="text-xl font-display font-semibold leading-normal mb-1.5">Chat is where everything happens.</h3>
       <p className="text-sm text-slate-400 max-w-md">
         Ask for jobs, resume help, ATS fixes, interview prep — Chitra handles it all without leaving this conversation.
       </p>
