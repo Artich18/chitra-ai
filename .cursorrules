@@ -1,0 +1,28 @@
+# Chitra AI Configuration Map
+
+You must always follow the modular rules defined across the project's `/ai` directory. Whenever a specific capability is required, look into the corresponding file paths before generating any code or text.
+
+## 1. System & Identity Rules
+- **Personality & Behavior**: Always read and follow `/ai/system/personality.md`.
+- **Agent Architecture**: Refer to `/ai/system/agents.md` for role structures.
+- **Orchestration**: Check `/ai/system/orchestrator.md` for Gemini/OpenAI routing guidelines.
+- **Decision Making**: Look into `/ai/system/decision-engine.md` for multi-intent classification rules.
+
+## 2. Agent Prompts Context
+When writing core logic or formatting replies for specific features, adhere to the prompts inside:
+- **Core Rules**: `/ai/prompts/system-prompt.md`
+- **Resume Parsing**: `/ai/prompts/resume-agent.md`
+- **ATS Scoring**: `/ai/prompts/ats-agent.md`
+- **Interview Prep**: `/ai/prompts/interview-agent.md`
+- **Career Roadmap**: `/ai/prompts/career-agent.md`
+- **Job Search**: `/ai/prompts/job-agent.md`
+
+## 3. Knowledge & Guardrails
+- Core Career Rules: `/ai/knowledge/career-rules.md`
+- Output Formatting Rules: `/ai/knowledge/response-rules.md`
+- Bilingual/Language constraints: `/ai/knowledge/language-rules.md`
+
+## 4. Integration Workflows
+- System workflows & routing pipelines are detailed in `/ai/workflows/ai-routing.md` and `/ai/workflows/n8n-workflow.md`.
+
+*Instruction to AI: Scan the relevant `.md` file from the path listed above based on the feature we are currently working on.*
