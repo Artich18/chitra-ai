@@ -133,8 +133,8 @@ function JobCardInline({ job, onSave, onOpen, saved }) {
             <Briefcase className="w-4 h-4 text-purple-300" />
           </div>
           <div className="min-w-0 w-full">
-            <p className="font-display font-semibold text-white break-words">{job.title}</p>
-            <p className="text-xs text-slate-400 break-words">{job.company}</p>
+            <p className="font-display font-semibold text-white whitespace-normal break-words">{job.title}</p>
+            <p className="text-xs text-slate-400 whitespace-normal break-words">{job.company}</p>
           </div>
         </div>
         <span className="text-[10px] font-mono-data text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-1 rounded-full whitespace-nowrap">{job.type}</span>

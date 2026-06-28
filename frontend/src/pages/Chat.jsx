@@ -163,12 +163,12 @@ export default function Chat() {
         </header>
 
         {/* Chat surface */}
-        <section className="flex-1 min-h-0 px-2 md:px-10 pb-20 md:pb-6 flex flex-col">
+        <section className="flex-1 min-h-0 px-0 md:px-10 pb-20 md:pb-6 flex flex-col">
           <div className="flex-1 glass-strong rounded-3xl flex flex-col overflow-hidden min-w-0" data-testid="chat-card">
             {/* Messages */}
             <div
               ref={scrollerRef}
-              className="flex-1 overflow-y-auto scrollbar-thin px-3 md:px-8 py-6 space-y-5"
+              className="flex-1 overflow-y-auto scrollbar-thin px-2 md:px-8 py-6 space-y-5"
               data-testid="chat-messages"
             >
               {messages.length === 0 && !sending && (
