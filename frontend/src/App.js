@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Loader2 } from 'lucide-react';
@@ -7,7 +7,6 @@ import Login from './pages/Login';
 import Chat from './pages/Chat';
 import JobWorkspace from './pages/JobWorkspace';
 import Settings from './pages/Settings';
-import AuthCallback from './pages/AuthCallback';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -17,12 +16,6 @@ function ProtectedRoute({ children }) {
 }
 
 function AppShell() {
-  const location = useLocation();
-  // Handle Emergent OAuth fragment BEFORE protected routing runs
-  if (location.hash?.includes('session_id=')) {
-    return <AuthCallback />;
-  }
-
   return (
     <Routes>
       <Route path="/login" element={<Login />} />

@@ -8,19 +8,20 @@ Modular provider layer. Production rules:
 - Automatic fallback on provider failure (logged)
 - Adding Claude/Grok/DeepSeek = drop in a new Provider class
 
-Uses the `emergentintegrations` library so we can pass any provider key.
+Uses the official Google and OpenAI Python SDKs so the backend can be deployed independently.
 """
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
 import re
-import uuid
 from typing import Any
 
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+import google.generativeai as genai
+from openai import AsyncOpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -64,16 +65,25 @@ class GeminiProvider(BaseProvider):
     def __init__(self, api_key: str, model: str = "gemini-2.5-flash"):
         self.api_key = api_key
         self.model = model
+        if api_key:
+            genai.configure(api_key=api_key)
 
     async def complete(self, system: str, prompt: str, *, json_mode: bool = False) -> str:
         if json_mode:
             system = system + "\n\nIMPORTANT: Reply with ONLY a JSON object. No markdown, no code fences, no extra text."
-        chat = LlmChat(
-            api_key=self.api_key,
-            session_id=f"chitra-{uuid.uuid4()}",
-            system_message=system,
-        ).with_model("gemini", self.model)
-        return await chat.send_message(UserMessage(text=prompt))
+
+        def _call() -> str:
+            if not self.api_key:
+                raise RuntimeError("Gemini API key is missing")
+            model = genai.GenerativeModel(model_name=self.model)
+            content = f"{system}\n\n{prompt}" if system else prompt
+            response = model.generate_content(
+                content,
+                generation_config={"response_mime_type": "application/json"} if json_mode else None,
+            )
+            return getattr(response, "text", "") or ""
+
+        return await asyncio.to_thread(_call)
 
 
 class OpenAIProvider(BaseProvider):
@@ -82,16 +92,21 @@ class OpenAIProvider(BaseProvider):
     def __init__(self, api_key: str, model: str = "gpt-5.5"):
         self.api_key = api_key
         self.model = model
+        self.client = AsyncOpenAI(api_key=api_key) if api_key else None
 
     async def complete(self, system: str, prompt: str, *, json_mode: bool = False) -> str:
         if json_mode:
             system = system + "\n\nIMPORTANT: Reply with ONLY a JSON object. No markdown, no code fences, no extra text."
-        chat = LlmChat(
-            api_key=self.api_key,
-            session_id=f"chitra-{uuid.uuid4()}",
-            system_message=system,
-        ).with_model("openai", self.model)
-        return await chat.send_message(UserMessage(text=prompt))
+        if not self.client:
+            raise RuntimeError("OpenAI API key is missing")
+
+        messages = [{"role": "system", "content": system}, {"role": "user", "content": prompt}]
+        kwargs: dict[str, Any] = {"model": self.model, "messages": messages}
+        if json_mode:
+            kwargs["response_format"] = {"type": "json_object"}
+
+        completion = await self.client.chat.completions.create(**kwargs)
+        return completion.choices[0].message.content or ""
 
 
 class AIOrchestrator:

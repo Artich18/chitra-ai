@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Sparkles, Mail, Lock, User, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '../lib/supabase';
 
 export default function Login() {
   const { loginWithPassword, registerWithPassword } = useAuth();
@@ -28,10 +29,22 @@ export default function Login() {
     }
   };
 
-  const loginWithGoogle = () => {
-    // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-    const redirectUrl = window.location.origin + '/';
-    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+  const loginWithGoogle = async () => {
+    setBusy(true);
+    try {
+      if (!supabase) throw new Error('Supabase is not configured');
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/',
+        },
+      });
+      if (error) throw error;
+      if (data?.url) window.location.assign(data.url);
+    } catch (err) {
+      toast.error(err?.message || 'Authentication failed');
+      setBusy(false);
+    }
   };
 
   return (
