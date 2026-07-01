@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "projects": [
+    {
+      "name": "chitra-frontend",
+      "framework": "create-react-app",
+      "rootDirectory": "frontend"
+    },
+    {
+      "name": "chitra-backend",
+      "framework": "fastapi",
+      "rootDirectory": "backend"
+    }
+  ]
+}
