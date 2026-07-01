@@ -1,15 +1,27 @@
 {
-  "version": 2,
-  "projects": [
+  "services": {
+    "frontend": {
+      "root": "frontend",
+      "framework": "create-react-app"
+    },
+    "backend": {
+      "root": "backend"
+    }
+  },
+  "rewrites": [
     {
-      "name": "chitra-frontend",
-      "framework": "create-react-app",
-      "rootDirectory": "frontend"
+      "source": "/api/(.*)?",
+      "destination": {
+        "type": "service",
+        "service": "backend"
+      }
     },
     {
-      "name": "chitra-backend",
-      "framework": "fastapi",
-      "rootDirectory": "backend"
+      "source": "/(.*)",
+      "destination": {
+        "type": "service",
+        "service": "frontend"
+      }
     }
   ]
 }
