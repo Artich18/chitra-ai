@@ -205,7 +205,8 @@ def get_repo() -> SupabaseRepository:
     global _repo
     if _repo is None:
         _repo = SupabaseRepository(
-            url=os.environ.get("SUPABASE_URL", os.environ.get("VITE_SUPABASE_URL", "")),
-            key=os.environ.get("SUPABASE_SERVICE_ROLE_KEY", os.environ.get("SUPABASE_ANON_KEY", os.environ.get("VITE_SUPABASE_ANON_KEY", ""))),
+            url=os.environ.get("https://dzfzfwhydlllnxbnqbya.supabase.co", os.environ.get("https://dzfzfwhydlllnxbnqbya.supabase.co", "")),
+            key=os.environ.get("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6Znpmd2h5ZGxsbG54Ym5xYnlhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjMwMjA4NiwiZXhwIjoyMDk3ODc4MDg2fQ.-6jZ0TIoGqdPd0N04IgWSGktkRwARcx0gGurZgRmLrc", os.environ.get("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6Znpmd2h5ZGxsbG54Ym5xYnlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMDIwODYsImV4cCI6MjA5Nzg3ODA4Nn0.TNjK6nqRFkPBCUYypSEFLQGSw50DBhXYkJ6Aucw1CR4", os.environ.get("", ""))),
+            key=os.environ.get("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6Znpmd2h5ZGxsbG54Ym5xYnlhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjMwMjA4NiwiZXhwIjoyMDk3ODc4MDg2fQ.-6jZ0TIoGqdPd0N04IgWSGktkRwARcx0gGurZgRmLrc", os.environ.get("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6Znpmd2h5ZGxsbG54Ym5xYnlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMDIwODYsImV4cCI6MjA5Nzg3ODA4Nn0.TNjK6nqRFkPBCUYypSEFLQGSw50DBhXYkJ6Aucw1CR4", os.environ.get("", ""))),
         )
     return _repo
