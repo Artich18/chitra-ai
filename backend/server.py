@@ -29,6 +29,22 @@ logger = logging.getLogger("chitra")
 
 app = FastAPI(title="Chitra AI", version="4.0.0")
 
+
+def _get_allowed_origins() -> list[str]:
+    configured = os.environ.get("CORS_ORIGINS", "").strip()
+    frontend_url = os.environ.get("FRONTEND_URL", "https://vercel.app").strip()
+    origins = [origin.strip() for origin in configured.split(",") if origin.strip()]
+
+    if frontend_url and frontend_url not in origins:
+        origins.append(frontend_url)
+    if "https://www.vercel.app" not in origins:
+        origins.append("https://www.vercel.app")
+    if not origins:
+        origins = ["https://vercel.app", "http://localhost:3000", "http://localhost:5173"]
+
+    return origins
+
+
 api_router = APIRouter(prefix="/api")
 
 
@@ -59,7 +75,7 @@ app.include_router(settings_router, prefix="/api")
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
+    allow_origins=_get_allowed_origins(),
     allow_methods=["*"],
     allow_headers=["*"],
 )

@@ -22,8 +22,21 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
+from dotenv import load_dotenv
 from supabase import create_client, Client
+
+ROOT_DIR = Path(__file__).resolve().parent
+load_dotenv(ROOT_DIR / ".env")
+
+
+def _get_env_var(*names: str, default: str = "") -> str:
+    for name in names:
+        value = os.getenv(name)
+        if value:
+            return value
+    return default
 
 
 class SupabaseRepository:
@@ -32,11 +45,13 @@ class SupabaseRepository:
     """
 
     def __init__(self, url: str, key: str):
-        self._client: Client = create_client(url, key)
+        self._client: Client | None = create_client(url, key) if url and key else None
 
     # ---------- generic helpers ----------
 
     async def find_one(self, table: str, query: dict) -> dict | None:
+        if not self._client:
+            return None
         try:
             filters = []
             for k, v in query.items():
@@ -75,6 +90,8 @@ class SupabaseRepository:
         sort: list | None = None,
         limit: int = 100,
     ) -> list[dict]:
+        if not self._client:
+            return []
         try:
             q = self._client.table(table).select("*")
             if query:
@@ -108,6 +125,8 @@ class SupabaseRepository:
             return []
 
     async def insert(self, table: str, doc: dict) -> dict:
+        if not self._client:
+            return {**doc}
         doc = {**doc}
         doc.setdefault("created_at", datetime.now(timezone.utc).isoformat())
         resp = self._client.table(table).insert(doc).execute()
@@ -115,6 +134,8 @@ class SupabaseRepository:
         return data[0] if data else doc
 
     async def update(self, table: str, query: dict, patch: dict) -> dict | None:
+        if not self._client:
+            return None
         patch = {**patch, "updated_at": datetime.now(timezone.utc).isoformat()}
         q = self._client.table(table).update(patch)
         for k, v in query.items():
@@ -137,6 +158,8 @@ class SupabaseRepository:
         return data[0] if data else None
 
     async def upsert(self, table: str, query: dict, patch: dict) -> dict | None:
+        if not self._client:
+            return None
         patch = {**patch, "updated_at": datetime.now(timezone.utc).isoformat()}
         # For upsert: try insert then update, or use Supabase upsert
         try:
@@ -147,6 +170,8 @@ class SupabaseRepository:
             return None
 
     async def delete(self, table: str, query: dict) -> int:
+        if not self._client:
+            return 0
         q = self._client.table(table).delete()
         for k, v in query.items():
             if k == "id":
@@ -168,6 +193,8 @@ class SupabaseRepository:
         return len(data)
 
     async def count(self, table: str, query: dict | None = None) -> int:
+        if not self._client:
+            return 0
         try:
             q = self._client.table(table).select("*", count="exact", head=True)
             if query:
@@ -205,8 +232,7 @@ def get_repo() -> SupabaseRepository:
     global _repo
     if _repo is None:
         _repo = SupabaseRepository(
-            url=os.environ.get("https://dzfzfwhydlllnxbnqbya.supabase.co", os.environ.get("https://dzfzfwhydlllnxbnqbya.supabase.co", "")),
-            key=os.environ.get("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6Znpmd2h5ZGxsbG54Ym5xYnlhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjMwMjA4NiwiZXhwIjoyMDk3ODc4MDg2fQ.-6jZ0TIoGqdPd0N04IgWSGktkRwARcx0gGurZgRmLrc", os.environ.get("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6Znpmd2h5ZGxsbG54Ym5xYnlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMDIwODYsImV4cCI6MjA5Nzg3ODA4Nn0.TNjK6nqRFkPBCUYypSEFLQGSw50DBhXYkJ6Aucw1CR4", os.environ.get("", ""))),
-            key=os.environ.get("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6Znpmd2h5ZGxsbG54Ym5xYnlhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjMwMjA4NiwiZXhwIjoyMDk3ODc4MDg2fQ.-6jZ0TIoGqdPd0N04IgWSGktkRwARcx0gGurZgRmLrc", os.environ.get("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6Znpmd2h5ZGxsbG54Ym5xYnlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMDIwODYsImV4cCI6MjA5Nzg3ODA4Nn0.TNjK6nqRFkPBCUYypSEFLQGSw50DBhXYkJ6Aucw1CR4", os.environ.get("", ""))),
+            url=_get_env_var("SUPABASE_URL", "VITE_SUPABASE_URL"),
+            key=_get_env_var("SUPABASE_ANON_KEY", "VITE_SUPABASE_ANON_KEY"),
         )
     return _repo
