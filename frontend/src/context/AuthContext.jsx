@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import api from '../lib/api';
 
 const AuthCtx = createContext(null);
 
@@ -8,28 +9,49 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   const syncSession = useCallback(async () => {
-    if (!supabase) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-
+    // Try Supabase first (if configured)
+    let foundUser = null;
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) throw error;
-      const nextUser = session?.user ?? null;
-      setUser(nextUser);
-      if (session?.access_token) {
-        localStorage.setItem('chitra_token', session.access_token);
-      } else {
-        localStorage.removeItem('chitra_token');
+      if (supabase) {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        const nextUser = session?.user ?? null;
+        setUser(nextUser);
+        if (session?.access_token) {
+          localStorage.setItem('chitra_token', session.access_token);
+          foundUser = nextUser;
+        } else {
+          localStorage.removeItem('chitra_token');
+        }
       }
     } catch {
       setUser(null);
       localStorage.removeItem('chitra_token');
-    } finally {
-      setLoading(false);
     }
+
+    // If no Supabase session found, look for an external `session_id` in the URL
+    // (Emergent OAuth redirects back to the app with `?session_id=...`).
+    if (!foundUser) {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const sid = params.get('session_id');
+        if (sid) {
+          const resp = await api.post('/auth/google/session', { session_id: sid });
+          const { token, user: u } = resp.data || {};
+          if (token) {
+            localStorage.setItem('chitra_token', token);
+            setUser(u ?? null);
+            foundUser = u ?? null;
+            // remove session_id from URL
+            window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+          }
+        }
+      } catch (e) {
+        // ignore and continue — we'll treat as unauthenticated
+      }
+    }
+
+    setLoading(false);
   }, []);
 
   useEffect(() => {
