@@ -232,7 +232,7 @@ def get_repo() -> SupabaseRepository:
     global _repo
     if _repo is None:
         _repo = SupabaseRepository(
-            url=_get_env_var("SUPABASE_URL", "VITE_SUPABASE_URL"),
-            key=_get_env_var("SUPABASE_ANON_KEY", "VITE_SUPABASE_ANON_KEY"),
+            url=_get_env_var("https://dzfzfwhydlllnxbnqbya.supabase.co", "https://dzfzfwhydlllnxbnqbya.supabase.co"),
+            key=_get_env_var("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6Znpmd2h5ZGxsbG54Ym5xYnlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMDIwODYsImV4cCI6MjA5Nzg3ODA4Nn0.TNjK6nqRFkPBCUYypSEFLQGSw50DBhXYkJ6Aucw1CR4", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6Znpmd2h5ZGxsbG54Ym5xYnlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMDIwODYsImV4cCI6MjA5Nzg3ODA4Nn0.TNjK6nqRFkPBCUYypSEFLQGSw50DBhXYkJ6Aucw1CR4"),
         )
     return _repo

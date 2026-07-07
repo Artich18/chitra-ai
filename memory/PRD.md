@@ -37,8 +37,8 @@ Missing Skills, Action Plan, Resume AI, Interview AI and Skill AI.
   shadcn/ui. Outfit / Plus Jakarta Sans / JetBrains Mono fonts.
 - **Routes**:
   - `GET  /api/health`
-  - `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/google/session`, `GET /api/auth/me`, `POST /api/auth/logout`
-  - `GET/POST /api/chat/sessions`, `GET /api/chat/sessions/{id}/messages`, `DELETE /api/chat/sessions/{id}`
+  - `POST /api/auth/register`, `POST /api/auth/login`, `POST /api`, `GET /api/auth/me`, `POST /api/auth/logout`
+  - `GET/POST /api//auth/google/sessionchat/sessions`, `GET /api/chat/sessions/{id}/messages`, `DELETE /api/chat/sessions/{id}`
   - `POST /api/chat/send`
   - `GET /api/jobs/saved`, `GET /api/jobs/{id}`, `POST /api/jobs/{id}/save`, `DELETE /api/jobs/{id}/save`
   - `GET /api/jobs/{id}/analysis`, `POST /api/jobs/{id}/analysis/refresh`

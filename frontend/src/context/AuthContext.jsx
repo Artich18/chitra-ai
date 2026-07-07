@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import api from '../lib/api';
 
 const AuthCtx = createContext(null);
 
@@ -27,28 +26,6 @@ export function AuthProvider({ children }) {
     } catch {
       setUser(null);
       localStorage.removeItem('chitra_token');
-    }
-
-    // If no Supabase session found, look for an external `session_id` in the URL
-    // (Emergent OAuth redirects back to the app with `?session_id=...`).
-    if (!foundUser) {
-      try {
-        const params = new URLSearchParams(window.location.search);
-        const sid = params.get('session_id');
-        if (sid) {
-          const resp = await api.post('/auth/google/session', { session_id: sid });
-          const { token, user: u } = resp.data || {};
-          if (token) {
-            localStorage.setItem('chitra_token', token);
-            setUser(u ?? null);
-            foundUser = u ?? null;
-            // remove session_id from URL
-            window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
-          }
-        }
-      } catch (e) {
-        // ignore and continue — we'll treat as unauthenticated
-      }
     }
 
     setLoading(false);

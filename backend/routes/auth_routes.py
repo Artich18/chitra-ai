@@ -12,7 +12,6 @@ from auth import (
     create_jwt,
     get_current_user,
 )
-from models import GoogleSessionIn
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -66,26 +65,3 @@ async def logout(request: Request, response: Response):
         await repo.delete("user_sessions", {"session_token": cookie_token})
     response.delete_cookie("session_token", path="/")
     return {"ok": True}
-
-
-@router.post("/google/session")
-async def google_session(payload: GoogleSessionIn):
-    """Exchange an external Google/Emergent `session_id` for a local JWT.
-
-    The Emergent OAuth flow places a `session_token` row in `user_sessions`.
-    Clients should POST `{ session_id }` to this endpoint to obtain a JWT
-    that the frontend stores as `chitra_token` (keeps parity with password
-    login/register endpoints).
-    """
-    repo = get_repo()
-    sess = await repo.find_one("user_sessions", {"session_token": payload.session_id})
-    if not sess:
-        raise HTTPException(status_code=401, detail="Invalid or expired session")
-
-    user = await repo.find_one("profiles", {"user_id": sess.get("user_id")})
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid session user")
-
-    user.pop("password_hash", None)
-    token = create_jwt(user["user_id"])
-    return {"token": token, "user": user}
