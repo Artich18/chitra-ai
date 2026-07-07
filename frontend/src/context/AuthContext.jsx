@@ -82,16 +82,6 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
-  const completeGoogleSession = async () => {
-    if (!supabase) throw new Error('Supabase is not configured');
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error) throw error;
-    setUser(session?.user ?? null);
-    if (session?.access_token) localStorage.setItem('chitra_token', session.access_token);
-    else localStorage.removeItem('chitra_token');
-    return session?.user ?? null;
-  };
-
   const logout = async () => {
     if (supabase) await supabase.auth.signOut();
     localStorage.removeItem('chitra_token');
@@ -99,7 +89,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthCtx.Provider value={{ user, loading, loginWithPassword, registerWithPassword, completeGoogleSession, logout, refresh: syncSession }}>
+    <AuthCtx.Provider value={{ user, loading, loginWithPassword, registerWithPassword, logout, refresh: syncSession }}>
       {children}
     </AuthCtx.Provider>
   );

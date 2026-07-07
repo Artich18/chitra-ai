@@ -11,7 +11,7 @@ import uuid
 import requests
 import pytest
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://ai-career-hub-42.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://chitra-ai-4n7w.vercel.app").rstrip("/")
 API = f"{BASE_URL}/api"
 
 SEED_EMAIL = "smoke@chitra.ai"

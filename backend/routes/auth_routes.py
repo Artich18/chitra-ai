@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Response, Request, Depends
+from fastapi import APIRouter, HTTPException, Response, Depends
 
 from database import get_repo
 from models import RegisterIn, LoginIn, Profile
@@ -58,10 +58,6 @@ async def me(user: dict = Depends(get_current_user)):
 
 
 @router.post("/logout")
-async def logout(request: Request, response: Response):
-    repo = get_repo()
-    cookie_token = request.cookies.get("session_token")
-    if cookie_token:
-        await repo.delete("user_sessions", {"session_token": cookie_token})
+async def logout(response: Response):
     response.delete_cookie("session_token", path="/")
     return {"ok": True}

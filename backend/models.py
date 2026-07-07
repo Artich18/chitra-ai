@@ -29,10 +29,6 @@ class LoginIn(BaseModel):
     password: str
 
 
-class GoogleSessionIn(BaseModel):
-    session_id: str
-
-
 class Profile(BaseModel):
     model_config = ConfigDict(extra="ignore")
     user_id: str = Field(default_factory=_uuid)
