@@ -5,8 +5,8 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from database import get_repo
-from auth import get_current_user
+from ..database import get_repo
+from ..auth import get_current_user
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 

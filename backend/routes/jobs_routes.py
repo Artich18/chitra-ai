@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from database import get_repo
-from auth import get_current_user
-from models import SaveJobIn
-from ai.providers import get_orchestrator
-from ai.prompts import WORKSPACE_SYSTEM
+from ..database import get_repo
+from ..auth import get_current_user
+from ..models import SaveJobIn
+from ..ai.providers import get_orchestrator
+from ..ai.prompts import WORKSPACE_SYSTEM
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 

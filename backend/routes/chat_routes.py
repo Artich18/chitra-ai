@@ -5,12 +5,12 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 
-from database import get_repo
-from auth import get_current_user
-from models import ChatSession, ChatMessage, SendMessageIn, Job
-from ai.providers import get_orchestrator
-from ai.prompts import build_chat_system
-from services.job_search import search_jobs_serp
+from ..database import get_repo
+from ..auth import get_current_user
+from ..models import ChatSession, ChatMessage, SendMessageIn, Job
+from ..ai.providers import get_orchestrator
+from ..ai.prompts import build_chat_system
+from ..services.job_search import search_jobs_serp
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 

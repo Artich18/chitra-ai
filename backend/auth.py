@@ -8,7 +8,7 @@ import jwt
 from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, Request, Depends
 
-from database import get_repo
+from .database import get_repo
 
 
 JWT_SECRET = os.environ.get("JWT_SECRET", "chitra_dev_secret")

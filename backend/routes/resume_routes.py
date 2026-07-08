@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 
-from database import get_repo
-from auth import get_current_user
-from models import Resume, ResumePasteIn
-from services.resume_parser import extract_text
+from ..database import get_repo
+from ..auth import get_current_user
+from ..models import Resume, ResumePasteIn
+from ..services.resume_parser import extract_text
 
 router = APIRouter(prefix="/resume", tags=["resume"])
 

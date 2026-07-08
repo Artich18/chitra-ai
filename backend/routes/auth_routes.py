@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Response, Depends
 
-from database import get_repo
-from models import RegisterIn, LoginIn, Profile
-from auth import (
+from ..database import get_repo
+from ..models import RegisterIn, LoginIn, Profile
+from ..auth import (
     hash_password,
     verify_password,
     create_jwt,

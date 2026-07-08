@@ -13,12 +13,12 @@ load_dotenv(ROOT_DIR / ".env")
 from fastapi import FastAPI, APIRouter  # noqa: E402
 from starlette.middleware.cors import CORSMiddleware  # noqa: E402
 
-from database import get_repo  # noqa: E402
-from routes.auth_routes import router as auth_router  # noqa: E402
-from routes.chat_routes import router as chat_router  # noqa: E402
-from routes.jobs_routes import router as jobs_router  # noqa: E402
-from routes.resume_routes import router as resume_router  # noqa: E402
-from routes.settings_routes import router as settings_router  # noqa: E402
+from .database import get_repo  # noqa: E402
+from .routes.auth_routes import router as auth_router  # noqa: E402
+from .routes.chat_routes import router as chat_router  # noqa: E402
+from .routes.jobs_routes import router as jobs_router  # noqa: E402
+from .routes.resume_routes import router as resume_router  # noqa: E402
+from .routes.settings_routes import router as settings_router  # noqa: E402
 
 
 logging.basicConfig(
