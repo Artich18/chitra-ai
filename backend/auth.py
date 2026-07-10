@@ -1,66 +1,80 @@
-"""Authentication helpers — JWT (email+password)."""
+"""Authentication helpers — Supabase JWT."""
 
 from __future__ import annotations
 
 import os
-import bcrypt
-import jwt
-from datetime import datetime, timedelta, timezone
+
 from fastapi import HTTPException, Request, Depends
+from supabase import create_client
 
 from .database import get_repo
 
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "chitra_dev_secret")
-JWT_ALG = os.environ.get("JWT_ALGORITHM", "HS256")
-JWT_EXPIRY_DAYS = int(os.environ.get("JWT_EXPIRY_DAYS", "7"))
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = (
+    os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    or os.getenv("SUPABASE_SERVICE_KEY")
+    or os.getenv("SUPABASE_ANON_KEY")
+)
 
-
-def hash_password(plain: str) -> str:
-    return bcrypt.hashpw(plain.encode(), bcrypt.gensalt()).decode()
-
-
-def verify_password(plain: str, hashed: str) -> bool:
-    try:
-        return bcrypt.checkpw(plain.encode(), hashed.encode())
-    except Exception:
-        return False
-
-
-def create_jwt(user_id: str) -> str:
-    payload = {
-        "sub": user_id,
-        "iat": datetime.now(timezone.utc),
-        "exp": datetime.now(timezone.utc) + timedelta(days=JWT_EXPIRY_DAYS),
-    }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALG)
-
-
-def decode_jwt(token: str) -> dict | None:
-    try:
-        return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALG])
-    except jwt.PyJWTError:
-        return None
+supabase = (
+    create_client(SUPABASE_URL, SUPABASE_KEY)
+    if SUPABASE_URL and SUPABASE_KEY
+    else None
+)
 
 
 async def get_current_user(request: Request) -> dict:
-    """Resolve the current user from a JWT bearer token."""
+    if not supabase:
+        raise HTTPException(
+            status_code=500,
+            detail="Supabase is not configured",
+        )
+
+    auth = request.headers.get("Authorization", "")
+
+    if not auth.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="Not authenticated",
+        )
+
+    token = auth.split(" ", 1)[1]
+
+    try:
+        user_response = supabase.auth.get_user(token)
+        auth_user = user_response.user
+
+        if not auth_user:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid token",
+            )
+
+    except Exception:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token",
+        )
+
     repo = get_repo()
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.lower().startswith("bearer "):
-        raise HTTPException(status_code=401, detail="Not authenticated")
 
-    token = auth_header.split(" ", 1)[1].strip()
-    payload = decode_jwt(token)
-    if not payload or not payload.get("sub"):
-        raise HTTPException(status_code=401, detail="Not authenticated")
+    profile = await repo.find_one(
+        "profiles",
+        {
+            "email": auth_user.email.lower()
+        },
+    )
 
-    user = await repo.find_one("profiles", {"user_id": payload["sub"]})
-    if not user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+    if not profile:
+        raise HTTPException(
+            status_code=401,
+            detail="Profile not found",
+        )
 
-    user.pop("password_hash", None)
-    return user
+    profile.pop("password_hash", None)
+
+    return profile
 
 
 CurrentUser = Depends(get_current_user)
