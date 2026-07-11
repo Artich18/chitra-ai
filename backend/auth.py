@@ -67,14 +67,29 @@ async def get_current_user(request: Request) -> dict:
     )
 
     if not profile:
-        raise HTTPException(
-            status_code=401,
-            detail="Profile not found",
+
+        profile = {
+            "user_id": str(auth_user.id),
+            "email": auth_user.email.lower(),
+            "full_name": (
+                auth_user.user_metadata.get("full_name")
+                or auth_user.user_metadata.get("name")
+                or ""
+            )
+        }
+
+        await repo.insert(
+            "profiles",
+            profile,
+        )
+
+        profile = await repo.find_one(
+            "profiles",
+            {
+                "email": auth_user.email.lower()
+            },
         )
 
     profile.pop("password_hash", None)
 
     return profile
-
-
-CurrentUser = Depends(get_current_user)
